@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>실시간 라이브 뉴스</title>
+    <style>
+        body { font-family: 'Malgun Gothic', sans-serif; background-color: #f4f6f9; margin: 0; padding: 20px; color: #333; }
+        .container { max-width: 900px; margin: 0 auto; }
+        h1 { text-align: center; color: #111; margin-bottom: 30px; }
+        
+        /* 로딩 애니메이션 및 에러 메시지 */
+        #loading, #error-message { text-align: center; font-size: 1.2rem; color: #666; margin-top: 50px; }
+        #error-message { color: #d9534f; display: none; }
+
+        /* 뉴스 카드 레이아웃 스타일링 */
+        .news-grid { display: grid; grid-template-columns: 1fr; gap: 20px; }
+        @media (min-width: 600px) { .news-grid { grid-template-columns: 1fr 1fr; } }
+        
+        .news-card { background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.05); display: flex; flex-direction: column; }
+        .news-img { width: 100%; height: 200px; object-fit: cover; background-color: #ddd; }
+        .news-content { padding: 20px; display: flex; flex-direction: column; flex-grow: 1; }
+        .news-title { font-size: 1.15rem; font-weight: bold; margin: 0 0 10px 0; line-height: 1.4; }
+        .news-title a { color: #007bff; text-decoration: none; }
+        .news-title a:hover { text-decoration: underline; }
+        .news-desc { color: #555; font-size: 0.9rem; line-height: 1.5; margin-bottom: 15px; flex-grow: 1; }
+        .news-meta { font-size: 0.8rem; color: #888; display: flex; justify-content: space-between; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>📰 실시간 주요 뉴스 스트림</h1>
+        
+        <div id="loading">최신 뉴스를 가져오는 중입니다...</div>
+        <div id="error-message">뉴스를 불러오는 데 실패했습니다. API 키를 확인해 주세요.</div>
+
+        <!-- 뉴스가 채워질 구역 -->
+        <div class="news-grid" id="newsGrid"></div>
+    </div>
+
+    <script>
+        // 🔑 GNews에서 발급받은 본인의 API 키를 여기에 입력하세요.
+        const apiKey = "cc9a8bb51a95c82dc25e20c57f15cf68"; 
+        
+        // 대한민국의 주요(top-news) 뉴스 10개를 가져오는 주소
+        const url = `https://gnews.io/api/v4/top-headlines?category=general&lang=ko&country=kr&max=10&apikey=${apiKey}`;
+
+        const newsGrid = document.getElementById('newsGrid');
+        const loadingEl = document.getElementById('loading');
+        const errorEl = document.getElementById('error-message');
+
+        // 실시간으로 데이터를 요청하는 비동기 함수
+        async function fetchLiveNews() {
+            try {
+                const response = await fetch(url);
+                if (!response.ok) {
+                    throw new Error("네트워크 응답 에러");
+                }
+                const data = await response.json();
+                
+                // 로딩 문구 숨기기
+                loadingEl.style.display = 'none';
+
+                // 가져온 기사들을 반복문으로 화면에 그리기
+                data.articles.forEach(article => {
+                    const card = document.createElement('div');
+                    card.classList.add('news-card');
+
+                    // 기사 발행 시간 가독성 있게 편집 (YYYY-MM-DD 형식으로)
+                    const publishedDate = article.publishedAt.split('T')[0];
+
+                    card.innerHTML = `
+                        <img class="news-img" src="${article.image || 'https://via.placeholder.com/400x200?text=No+Image'}" alt="뉴스 이미지">
+                        <div class="news-content">
+                            <div class="news-title">
+                                <a href="${article.url}" target="_blank">${article.title}</a>
+                            </div>
+                            <p class="news-desc">${article.description || '본문 요약 내용이 없습니다.'}</p>
+                            <div class="news-meta">
+                                <span>✍️ ${article.source.name}</span>
+                                <span>📅 ${publishedDate}</span>
+                            </div>
+                        </div>
+                    `;
+                    newsGrid.appendChild(card);
+                });
+
+            } catch (error) {
+                console.error("뉴스 로드 실패:", error);
+                loadingEl.style.display = 'none';
+                errorEl.style.display = 'block';
+            }
+        }
+
+        // 페이지 로드 시 즉시 뉴스 수집 실행
+        fetchLiveNews();
+    </script>
+</body>
+</html>
